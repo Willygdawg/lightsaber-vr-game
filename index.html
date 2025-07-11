@@ -1,0 +1,81 @@
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Final Lightsaber VR Game</title>
+    <meta name="description" content="WebXR Lightsaber Puzzle">
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+  </head>
+  <body>
+    <a-scene xr-mode-ui="enabled: true" background="color: black">
+      <!-- Floor -->
+      <a-plane rotation="-90 0 0" width="20" height="20" color="#111"></a-plane>
+
+      <!-- Realistic Lightsaber GLB -->
+      <a-entity gltf-model="#saberGLB" position="0 1.2 -3" scale="1 1 1"></a-entity>
+
+      <!-- Blade -->
+      <a-cylinder id="blade" position="0 2 -3" radius="0.03" height="0.01" color="cyan" visible="true"
+                  animation__grow="property: height; to: 1.2; dur: 700; easing: easeOutQuad; startEvents: ignite"
+                  animation__rise="property: position; to: 0 2.6 -3; dur: 700; easing: easeOutQuad; startEvents: ignite">
+      </a-cylinder>
+
+      <!-- Color Matching Targets -->
+      <a-sphere id="targetRed" position="-0.6 2 -3" radius="0.1" color="red"></a-sphere>
+      <a-sphere id="targetGreen" position="0 2.4 -3" radius="0.1" color="green"></a-sphere>
+      <a-sphere id="targetBlue" position="0.6 2 -3" radius="0.1" color="blue"></a-sphere>
+
+      <!-- Sources -->
+      <a-sphere id="sourceRed" position="-0.6 1.2 -3" radius="0.1" color="red" class="clickable"></a-sphere>
+      <a-sphere id="sourceGreen" position="0 1.2 -3" radius="0.1" color="green" class="clickable"></a-sphere>
+      <a-sphere id="sourceBlue" position="0.6 1.2 -3" radius="0.1" color="blue" class="clickable"></a-sphere>
+
+      <!-- Camera + VR Controls -->
+      <a-entity id="rig" movement-controls position="0 1.6 0">
+        <a-entity camera look-controls wasd-controls>
+          <a-entity laser-controls="hand: right" raycaster="objects: .clickable"></a-entity>
+        </a-entity>
+      </a-entity>
+
+      <!-- Sound -->
+      <a-assets>
+        <a-asset-item id="saberGLB" src="realistic-lightsaber.glb"></a-asset-item>
+        <audio id="saberSound" src="lightsaber-on.mp3"></audio>
+      </a-assets>
+
+      <a-sound id="ignitionSound" src="#saberSound" autoplay="false"></a-sound>
+    </a-scene>
+
+    <script>
+      const pairs = {
+        sourceRed: 'targetRed',
+        sourceGreen: 'targetGreen',
+        sourceBlue: 'targetBlue'
+      };
+      const connected = {};
+
+      document.querySelectorAll('.clickable').forEach(source => {
+        source.addEventListener('click', () => {
+          const targetId = pairs[source.id];
+          const target = document.getElementById(targetId);
+
+          const line = document.createElement('a-entity');
+          line.setAttribute('line', {
+            start: source.getAttribute('position'),
+            end: target.getAttribute('position'),
+            color: source.getAttribute('color')
+          });
+          document.querySelector('a-scene').appendChild(line);
+
+          connected[source.id] = true;
+
+          if (Object.keys(pairs).every(key => connected[key])) {
+            document.getElementById('blade').emit('ignite');
+            document.getElementById('ignitionSound').components.sound.playSound();
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
